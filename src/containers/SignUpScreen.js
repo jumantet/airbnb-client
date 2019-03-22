@@ -1,6 +1,5 @@
 import React from "react";
 import axios from "axios";
-import { AsyncStorage } from "react-native";
 import {
   View,
   Text,
@@ -10,8 +9,9 @@ import {
   KeyboardAvoidingView,
   TouchableOpacity
 } from "react-native";
+import ImagePickerUpload from "../components/ImagePickerUpload";
 
-const url = "https://airbnb-api.now.sh/";
+const url = "http://localhost:3000/";
 class SignInScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
     return {
@@ -20,27 +20,34 @@ class SignInScreen extends React.Component {
   };
   state = {
     mail: "",
-    password: ""
+    password: "",
+    userName: "",
+    files: []
   };
 
-  _onPressButton = async () => {
-    const newConnexion = {
+  _handleChange = (field, value) => {
+    this.setState({ [field]: value });
+  };
+
+  addImage = image => {
+    let files = [...this.state.files];
+    files.push(image);
+    this.setState({ files: files });
+  };
+
+  handleSignUp = async () => {
+    const obj = {
       email: this.state.mail,
+      username: this.state.userName,
+      files: this.state.files,
       password: this.state.password
     };
-    const response = await axios.post(url + "api/user/log_in", newConnexion);
-
-    const value = JSON.stringify({
-      token: response.data.token,
-      newConnexion
-    });
-
-    await AsyncStorage.setItem("userToken", value);
-    this.props.navigation.navigate("App");
-  };
-
-  _onPressButtonSignUp = async () => {
-    this.props.navigation.navigate("SignUp");
+    console.log(obj);
+    const response = await axios.post(url + "sign_up", obj);
+    console.log(response.data);
+    if (response.data.token) {
+      this.props.navigation.navigate("AuthLoading");
+    }
   };
 
   render() {
@@ -53,6 +60,7 @@ class SignInScreen extends React.Component {
             source={require("/Users/julianmantet/Formation/LeReacteur/ReactNative/AirbnbApp/assets/logo.svg.png")}
           />
         </View>
+        <ImagePickerUpload addImage={this.addImage} />
         <KeyboardAvoidingView
           keyboardVerticalOffset={-200}
           style={styles.bottomContainer}
@@ -61,27 +69,29 @@ class SignInScreen extends React.Component {
           <View style={styles.inputs}>
             <TextInput
               keyboardType="email-address"
-              placeholder="Enter your mail adress"
+              placeholder="Email"
               textContentType="emailAddress"
               style={styles.input}
-              onChangeText={mail => this.setState({ mail })}
+              onChangeText={value => this._handleChange("mail", value)}
               value={this.state.mail}
             />
             <TextInput
+              placeholder="Username"
+              style={styles.input}
+              onChangeText={value => this._handleChange("userName", value)}
+              value={this.state.userName}
+            />
+            <TextInput
               textContentType="password"
-              placeholder="Enter your password"
+              placeholder="Password"
               style={styles.input}
               secureTextEntry={true}
-              onChangeText={password => this.setState({ password })}
+              onChangeText={value => this._handleChange("password", value)}
               value={this.state.password}
             />
           </View>
-
-          <TouchableOpacity onPress={this._onPressButton} style={styles.button}>
-            <Text style={styles.buttonConnect}>Connect</Text>
-          </TouchableOpacity>
           <TouchableOpacity
-            onPress={this._onPressButtonSignUp}
+            onPress={this.handleSignUp}
             style={styles.buttonSignUp}
           >
             <Text style={styles.buttonSignUpText}>Sign Up</Text>
@@ -125,30 +135,15 @@ const styles = StyleSheet.create({
   inputs: {
     marginBottom: 20
   },
-  button: {
-    marginTop: 20,
-    backgroundColor: "#FF5A5F",
-    height: 40,
-    width: 200,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  buttonConnect: {
-    color: "white",
-    fontFamily: "Avenir",
-    fontSize: 16,
-    fontWeight: "bold"
-  },
   buttonSignUpText: {
-    color: "#FF5A5F",
+    color: "white",
     fontFamily: "Avenir",
     fontSize: 16,
     fontWeight: "bold"
   },
   buttonSignUp: {
     marginTop: 20,
-    backgroundColor: "white",
+    backgroundColor: "#FF5A5F",
     height: 40,
     width: 200,
     borderStyle: "solid",
